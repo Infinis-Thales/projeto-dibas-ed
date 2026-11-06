@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b1220" />
+  <meta name="description" content="Dibas — diagnóstico 360º de maturidade digital e laudo técnico de boas práticas empresariais." />
+  <title>Dibas | Diagnóstico de Maturidade Digital</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dibas: {
+              ink: '#0b1220',
+              navy: '#111d33',
+              blue: '#3978f6',
+              cyan: '#43d5ca',
+              muted: '#718096'
+            }
+          },
+          boxShadow: {
+            soft: '0 18px 60px rgba(15, 23, 42, 0.08)'
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Chart.js via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+
+  <style>
+    :root {
+      --ink: #0b1220;
+      --navy: #111d33;
+      --blue: #3978f6;
+      --cyan: #43d5ca;
+      --muted: #718096;
+      --line: #e7edf5;
+      --surface: #ffffff;
+      --background: #f4f7fb;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 84% 2%, rgba(67, 213, 202, .11), transparent 25rem),
+        radial-gradient(circle at 6% 16%, rgba(57, 120, 246, .08), transparent 24rem),
+        var(--background);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .page-shell { width: min(1180px, calc(100% - 40px)); margin-inline: auto; }
+    .glass-card {
+      background: rgba(255,255,255,.93);
+      border: 1px solid rgba(226,232,240,.9);
+      box-shadow: 0 18px 60px rgba(15,23,42,.055);
+    }
+    .brand-mark {
+      display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px;
+      color: white; background: linear-gradient(145deg, #3978f6, #43d5ca);
+      box-shadow: 0 8px 20px rgba(57,120,246,.25);
+    }
+    .eyebrow { letter-spacing: .16em; text-transform: uppercase; font-size: .68rem; font-weight: 800; }
+    .gradient-text {
+      background: linear-gradient(100deg, #3978f6 0%, #20a9b9 52%, #159b8e 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; justify-content: center; gap: .6rem;
+      border: 1px solid transparent; border-radius: 12px; padding: .85rem 1.15rem;
+      color: white; font-weight: 750; background: linear-gradient(110deg, #3978f6, #2563eb);
+      box-shadow: 0 9px 22px rgba(37,99,235,.2); transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(37,99,235,.27); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; justify-content: center; gap: .6rem;
+      border: 1px solid #dce5f0; border-radius: 12px; padding: .82rem 1.05rem;
+      color: #24334c; background: #fff; font-weight: 700; transition: .18s ease;
+    }
+    .btn-secondary:hover { border-color: #a8c1ed; background: #f8fbff; }
+    .field-control {
+      width: 100%; border: 1px solid #dce5f0; border-radius: 11px; background: #fff;
+      padding: .82rem .9rem; color: #18263d; outline: none; transition: border-color .18s, box-shadow .18s;
+    }
+    .field-control:focus { border-color: #6c9af5; box-shadow: 0 0 0 3px rgba(57,120,246,.12); }
+    .question-card { border: 1px solid #e6edf5; border-radius: 16px; background: white; padding: 1.1rem; }
+    .option-label {
+      display: flex; align-items: flex-start; gap: .55rem; height: 100%; padding: .72rem .72rem;
+      border: 1px solid #e4eaf2; border-radius: 11px; cursor: pointer; transition: .16s ease;
+      color: #536177; font-size: .79rem; line-height: 1.3;
+    }
+    .option-label:hover { border-color: #a9c4f5; background: #f8fbff; }
+    .option-label input { accent-color: #3978f6; margin-top: .12rem; flex: 0 0 auto; }
+    .option-label:has(input:checked) { border-color: #3978f6; background: #eff5ff; color: #183c7a; box-shadow: inset 0 0 0 1px rgba(57,120,246,.12); }
+    .pillar-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; }
+    .score-ring {
+      --score: 0;
+      width: 168px; height: 168px; border-radius: 50%; display: grid; place-items: center;
+      background: conic-gradient(from 0deg, #3978f6 0%, #43d5ca calc(var(--score) * 1%), #e9eff7 0);
+      position: relative; flex: 0 0 auto;
+    }
+    .score-ring::before { content: ''; position: absolute; inset: 11px; background: white; border-radius: 50%; }
+    .score-ring > div { position: relative; z-index: 1; text-align: center; }
+    .score-card { border: 1px solid #e6edf5; border-radius: 17px; background: white; padding: 1rem; }
+    .progress-track { background: #edf2f8; border-radius: 99px; height: 8px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #3978f6, #43d5ca); }
+    .recommendation { border: 1px solid #e5ecf4; border-radius: 13px; padding: .9rem; background: #fff; }
+    .recommendation-number { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; background: #edf4ff; color: #2862c7; font-size: .73rem; font-weight: 800; flex: 0 0 auto; }
+    .status-pill { display: inline-flex; align-items: center; gap: .45rem; padding: .45rem .75rem; border-radius: 999px; font-size: .76rem; font-weight: 800; }
+    .status-critical { color: #a63c39; background: #fff0ef; }
+    .status-transition { color: #9a5b13; background: #fff6e8; }
+    .status-structured { color: #2368a9; background: #edf6ff; }
+    .status-leader { color: #16745d; background: #e9faf4; }
+    .section-anchor { scroll-margin-top: 24px; }
+    .chart-wrap { position: relative; min-height: 310px; }
+    .fallback-bar { display: grid; grid-template-columns: 145px 1fr 45px; gap: 12px; align-items: center; margin: 13px 0; font-size: .8rem; }
+    .fallback-track { height: 10px; border-radius: 30px; background: #edf2f8; overflow: hidden; }
+    .fallback-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #3978f6, #43d5ca); }
+    .print-only { display: none; }
+
+    @media (max-width: 640px) {
+      .page-shell { width: min(100% - 24px, 1180px); }
+      .score-ring { width: 145px; height: 145px; }
+      .fallback-bar { grid-template-columns: 105px 1fr 38px; gap: 8px; }
+    }
+
+    @media print {
+      @page { size: A4; margin: 14mm; }
+      body { background: #fff !important; color: #111827; font-size: 10pt; }
+      .page-shell { width: 100%; max-width: none; }
+      .no-print, header, footer, #assessment, .screen-only { display: none !important; }
+      #results { display: block !important; margin: 0 !important; padding: 0 !important; }
+      .glass-card, .score-card, .recommendation { box-shadow: none !important; border-color: #d8dee8 !important; }
+      .glass-card { background: white !important; }
+      .print-only { display: block !important; }
+      .result-grid { break-inside: avoid; }
+      .pillar-report { break-inside: avoid; page-break-inside: avoid; }
+      .recommendation { break-inside: avoid; }
+      .chart-wrap { min-height: 250px; }
+      canvas { max-height: 270px !important; }
+      .gradient-text { color: #2363ca !important; background: none !important; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="relative overflow-hidden bg-[#0b1220] text-white">
+    <div class="absolute inset-0 opacity-30" aria-hidden="true" style="background: radial-gradient(circle at 80% 10%, #2563eb 0, transparent 28%), radial-gradient(circle at 55% 110%, #0d9488 0, transparent 30%);"></div>
+    <div class="page-shell relative z-10">
+      <nav class="flex items-center justify-between py-5" aria-label="Navegação principal">
+        <a href="#inicio" class="flex items-center gap-3 no-underline text-white">
+          <span class="brand-mark"><i data-lucide="workflow" class="w-6 h-6"></i></span>
+          <span class="font-black text-xl tracking-tight">dibas<span class="text-[#43d5ca]">.</span></span>
+        </a>
+        <div class="hidden sm:flex items-center gap-7 text-sm text-slate-300">
+          <a href="#metodologia" class="hover:text-white transition">Metodologia</a>
+          <a href="#assessment" class="hover:text-white transition">Diagnóstico</a>
+          <a href="#resultados" class="hover:text-white transition">Laudo</a>
+        </div>
+        <button id="demoButtonTop" type="button" class="rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/15 transition no-print">
+          <span class="inline-flex items-center gap-2"><i data-lucide="play-circle" class="w-4 h-4"></i> Ver demonstração</span>
+        </button>
+      </nav>
+
+      <section id="inicio" class="grid lg:grid-cols-[1.2fr_.8fr] gap-10 items-center py-12 md:py-16">
+        <div class="max-w-3xl">
+          <div class="inline-flex items-center gap-2 rounded-full border border-[#43d5ca]/30 bg-[#43d5ca]/10 px-3 py-1.5 text-xs font-bold tracking-wide text-[#8df1e6] mb-5">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#43d5ca]"></span> DIAGNÓSTICO EXECUTIVO 360º
+          </div>
+          <h1 class="text-4xl sm:text-5xl lg:text-[3.55rem] font-black leading-[1.08] tracking-tight">Transforme tecnologia em <span class="text-[#55d9ce]">vantagem competitiva.</span></h1>
+          <p class="mt-5 max-w-2xl text-base sm:text-lg leading-relaxed text-slate-300">Avalie a maturidade digital da sua empresa, identifique riscos operacionais e receba um plano de boas práticas priorizado em quatro pilares estratégicos.</p>
+          <div class="mt-8 flex flex-wrap gap-3 no-print">
+            <a href="#assessment" class="btn-primary"><i data-lucide="clipboard-check" class="w-4 h-4"></i> Iniciar diagnóstico</a>
+            <button id="demoButtonHero" type="button" class="btn-secondary !border-white/20 !bg-white/10 !text-white hover:!bg-white/15"><i data-lucide="sparkles" class="w-4 h-4"></i> Carregar caso exemplo (Demo)</button>
+          </div>
+          <div class="mt-9 flex flex-wrap gap-x-6 gap-y-3 text-xs text-slate-400">
+            <span class="inline-flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4 text-[#43d5ca]"></i> Processamento local</span>
+            <span class="inline-flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-4 h-4 text-[#43d5ca]"></i> 4 pilares de maturidade</span>
+            <span class="inline-flex items-center gap-2"><i data-lucide="file-check-2" class="w-4 h-4 text-[#43d5ca]"></i> Laudo exportável</span>
+          </div>
+        </div>
+
+        <div class="relative hidden lg:block">
+          <div class="absolute -inset-5 rounded-[2rem] bg-gradient-to-br from-blue-500/20 to-teal-400/10 blur-2xl"></div>
+          <div class="relative rounded-[26px] border border-white/10 bg-white/[.07] p-6 shadow-2xl backdrop-blur">
+            <div class="flex items-center justify-between border-b border-white/10 pb-4">
+              <div><p class="text-xs font-semibold text-slate-400">VISÃO EXECUTIVA</p><p class="mt-1 text-sm font-bold">Radar de maturidade digital</p></div>
+              <span class="rounded-full bg-emerald-400/10 px-3 py-1 text-[10px] font-bold text-emerald-300">360º</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3 py-5">
+              <div class="rounded-2xl bg-white/[.06] p-4"><i data-lucide="cloud" class="mb-3 h-5 w-5 text-sky-300"></i><p class="text-xs text-slate-400">Infraestrutura</p><p class="mt-1 text-xl font-extrabold">Cloud</p></div>
+              <div class="rounded-2xl bg-white/[.06] p-4"><i data-lucide="network" class="mb-3 h-5 w-5 text-cyan-300"></i><p class="text-xs text-slate-400">Sistemas</p><p class="mt-1 text-xl font-extrabold">Integrados</p></div>
+              <div class="rounded-2xl bg-white/[.06] p-4"><i data-lucide="bot" class="mb-3 h-5 w-5 text-violet-300"></i><p class="text-xs text-slate-400">Produtividade</p><p class="mt-1 text-xl font-extrabold">IA + No-Code</p></div>
+              <div class="rounded-2xl bg-white/[.06] p-4"><i data-lucide="shield-check" class="mb-3 h-5 w-5 text-emerald-300"></i><p class="text-xs text-slate-400">Proteção</p><p class="mt-1 text-xl font-extrabold">Governança</p></div>
+            </div>
+            <div class="rounded-xl border border-white/10 bg-[#0b1220]/60 p-4">
+              <div class="mb-3 flex items-center justify-between"><span class="text-xs text-slate-400">Evolução contínua</span><span class="text-xs font-bold text-[#69e0d5]">Diagnosticar → Priorizar → Evoluir</span></div>
+              <div class="h-2 rounded-full bg-white/10"><div class="h-2 w-[72%] rounded-full bg-gradient-to-r from-blue-500 to-teal-300"></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </header>
+
+  <main class="page-shell py-10 md:py-14">
+    <section id="metodologia" class="mb-12 grid md:grid-cols-[.8fr_1.2fr] gap-7 items-start section-anchor">
+      <div>
+        <p class="eyebrow text-blue-600">Como funciona</p>
+        <h2 class="mt-2 text-2xl md:text-3xl font-black tracking-tight">Uma visão clara do próximo passo.</h2>
+        <p class="mt-3 text-sm leading-relaxed text-slate-600">O questionário avalia oito práticas empresariais. Cada resposta recebe de zero a três pontos e alimenta uma pontuação de zero a cem por pilar e no resultado geral.</p>
+      </div>
+      <div class="grid sm:grid-cols-4 gap-3">
+        <div class="rounded-2xl border border-slate-200 bg-white p-4"><span class="text-xs font-bold text-blue-600">01</span><p class="mt-2 text-sm font-extrabold">Infraestrutura</p><p class="mt-1 text-xs leading-relaxed text-slate-500">Nuvem, continuidade e backup.</p></div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-4"><span class="text-xs font-bold text-cyan-600">02</span><p class="mt-2 text-sm font-extrabold">Sistemas</p><p class="mt-1 text-xs leading-relaxed text-slate-500">ERP, CRM e fluxo de dados.</p></div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-4"><span class="text-xs font-bold text-violet-600">03</span><p class="mt-2 text-sm font-extrabold">IA e automação</p><p class="mt-1 text-xs leading-relaxed text-slate-500">Produtividade e processos.</p></div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-4"><span class="text-xs font-bold text-emerald-600">04</span><p class="mt-2 text-sm font-extrabold">Governança</p><p class="mt-1 text-xs leading-relaxed text-slate-500">LGPD, segurança e ética.</p></div>
+      </div>
+    </section>
+
+    <section id="assessment" class="section-anchor glass-card rounded-[24px] p-5 sm:p-8 mb-12">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-7">
+        <div>
+          <p class="eyebrow text-blue-600">Etapa 01 · Avaliação</p>
+          <h2 class="mt-2 text-2xl md:text-3xl font-black tracking-tight">Diagnóstico da empresa</h2>
+          <p class="mt-2 text-sm text-slate-500">Preencha os dados e selecione a opção que melhor representa a realidade atual.</p>
+        </div>
+        <button id="demoButtonForm" type="button" class="btn-secondary no-print"><i data-lucide="flask-conical" class="w-4 h-4"></i> Carregar Caso Exemplo (Demo)</button>
+      </div>
+
+      <form id="assessmentForm" novalidate>
+        <div class="grid md:grid-cols-3 gap-4 mb-8">
+          <div class="md:col-span-1">
+            <label for="companyName" class="mb-2 block text-sm font-bold text-slate-700">Nome da empresa <span class="text-rose-500">*</span></label>
+            <input id="companyName" name="companyName" class="field-control" type="text" placeholder="Ex.: Empresa Exemplo Ltda." required maxlength="100" />
+          </div>
+          <div>
+            <label for="companySector" class="mb-2 block text-sm font-bold text-slate-700">Setor de atuação <span class="text-rose-500">*</span></label>
+            <select id="companySector" name="companySector" class="field-control" required>
+              <option value="">Selecione o setor</option>
+              <option>Comércio e Varejo</option>
+              <option>Indústria e Manufatura</option>
+              <option>Serviços</option>
+              <option>Tecnologia</option>
+              <option>Saúde</option>
+              <option>Educação</option>
+              <option>Alimentos e Bebidas</option>
+              <option>Construção e Engenharia</option>
+              <option>Logística e Transporte</option>
+              <option>Financeiro</option>
+              <option>Agronegócio</option>
+              <option>Outro</option>
+            </select>
+          </div>
+          <div>
+            <label for="companySize" class="mb-2 block text-sm font-bold text-slate-700">Porte da empresa <span class="text-rose-500">*</span></label>
+            <select id="companySize" name="companySize" class="field-control" required>
+              <option value="">Selecione o porte</option>
+              <option>Microempresa (até 9 pessoas)</option>
+              <option>Pequena empresa (10 a 49 pessoas)</option>
+              <option>Média empresa (50 a 249 pessoas)</option>
+              <option>Grande empresa (250 ou mais pessoas)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-4 border-b border-slate-100 pb-3 mb-5">
+          <div><h3 class="text-lg font-extrabold">Questionário executivo</h3><p class="mt-1 text-xs text-slate-500">Oito perguntas · Duas por pilar · Todas as perguntas têm o mesmo peso.</p></div>
+          <span id="completionCount" class="whitespace-nowrap rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">0 de 8 respondidas</span>
+        </div>
+        <div id="questionGroups" class="space-y-6"></div>
+
+        <div class="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-t border-slate-100 pt-6">
+          <p class="max-w-xl text-xs leading-relaxed text-slate-500"><i data-lucide="info" class="inline h-4 w-4 align-text-bottom mr-1"></i> Responda considerando processos em operação, não apenas iniciativas planejadas. O resultado é uma autoavaliação orientativa.</p>
+          <button type="submit" class="btn-primary no-print"><i data-lucide="gauge" class="w-4 h-4"></i> Gerar diagnóstico</button>
+        </div>
+        <p id="formError" class="mt-3 hidden text-sm font-semibold text-rose-600" role="alert"></p>
+      </form>
+    </section>
+
+    <section id="results" class="hidden section-anchor space-y-7" aria-live="polite">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <p class="eyebrow text-blue-600">Etapa 02 · Laudo técnico</p>
+          <h2 class="mt-2 text-2xl md:text-3xl font-black tracking-tight">Painel de maturidade digital</h2>
+          <p id="reportMeta" class="mt-2 text-sm text-slate-500"></p>
+        </div>
+        <div class="flex flex-wrap gap-2 no-print">
+          <button id="editButton" type="button" class="btn-secondary"><i data-lucide="pencil" class="w-4 h-4"></i> Editar respostas</button>
+          <button id="printButton" type="button" class="btn-primary"><i data-lucide="file-down" class="w-4 h-4"></i> Imprimir / Exportar Laudo em PDF</button>
+        </div>
+      </div>
+
+      <div class="print-only mb-4 border-b border-slate-300 pb-3">
+        <div class="flex items-center justify-between"><strong class="text-xl">dibas<span class="text-blue-600">.</span></strong><span class="text-xs text-slate-500">LAUDO TÉCNICO · DIAGNÓSTICO 360º</span></div>
+        <p id="printCompany" class="mt-2 font-bold"></p>
+      </div>
+
+      <div class="grid lg:grid-cols-[.88fr_1.12fr] gap-5 result-grid">
+        <div class="glass-card rounded-[22px] p-6 sm:p-7">
+          <div class="flex items-center justify-between"><p class="eyebrow text-slate-500">Índice geral</p><span class="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-extrabold tracking-wider text-blue-700">DIBAS 360º</span></div>
+          <div class="mt-6 flex flex-col sm:flex-row items-center gap-6">
+            <div id="scoreRing" class="score-ring" role="progressbar" aria-label="Índice geral de maturidade digital" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div><span id="overallScore" class="block text-4xl font-black tracking-tight">0%</span><span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Maturidade</span></div>
+            </div>
+            <div class="flex-1 text-center sm:text-left">
+              <span id="classificationBadge" class="status-pill status-critical">Iniciante · Crítico</span>
+              <h3 id="classificationTitle" class="mt-3 text-2xl font-black">Ponto de partida</h3>
+              <p id="classificationDescription" class="mt-2 text-sm leading-relaxed text-slate-600"></p>
+              <p id="priorityText" class="mt-3 text-xs font-bold text-blue-700"></p>
+            </div>
+          </div>
+          <div class="mt-7 rounded-xl bg-slate-50 p-4">
+            <div class="flex items-center justify-between text-xs"><span class="font-bold text-slate-600">Escala de maturidade</span><span class="text-slate-400">0–100 pontos</span></div>
+            <div class="mt-3 grid grid-cols-4 gap-1.5 text-center">
+              <div><div class="h-1.5 rounded-full bg-rose-300"></div><p class="mt-2 text-[9px] font-bold text-slate-500">0–24<br>Iniciante</p></div>
+              <div><div class="h-1.5 rounded-full bg-amber-300"></div><p class="mt-2 text-[9px] font-bold text-slate-500">25–49<br>Transição</p></div>
+              <div><div class="h-1.5 rounded-full bg-sky-400"></div><p class="mt-2 text-[9px] font-bold text-slate-500">50–74<br>Conectada</p></div>
+              <div><div class="h-1.5 rounded-full bg-emerald-400"></div><p class="mt-2 text-[9px] font-bold text-slate-500">75–100<br>Líder</p></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-[22px] p-6 sm:p-7">
+          <div class="flex items-center justify-between gap-3"><div><p class="eyebrow text-slate-500">Visão comparativa</p><h3 class="mt-1 text-lg font-extrabold">Desempenho por pilar</h3></div><span class="text-xs text-slate-400">Escala 0–100%</span></div>
+          <div class="chart-wrap mt-3">
+            <canvas id="pillarChart" role="img" aria-label="Gráfico radar com a pontuação de cada pilar"></canvas>
+            <div id="chartFallback" class="hidden pt-3" aria-label="Comparação de pontuação por pilar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="mb-4 flex items-end justify-between gap-3"><div><p class="eyebrow text-blue-600">Composição do índice</p><h3 class="mt-1 text-xl font-black">Pontuação dos quatro pilares</h3></div><p class="hidden sm:block text-xs text-slate-500">Média das duas respostas de cada pilar.</p></div>
+        <div id="pillarCards" class="grid sm:grid-cols-2 xl:grid-cols-4 gap-3"></div>
+      </div>
+
+      <div class="glass-card rounded-[22px] p-5 sm:p-7">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
+          <div><p class="eyebrow text-blue-600">Etapa 03 · Recomendações</p><h3 class="mt-1 text-2xl font-black">Plano de Boas Práticas do Especialista</h3><p class="mt-2 text-sm text-slate-500">Ações técnicas sugeridas com base nas respostas e no nível de maturidade de cada pilar.</p></div>
+          <span class="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">Prioridades por pilar</span>
+        </div>
+        <div id="recommendations" class="space-y-5"></div>
+      </div>
+
+      <div class="glass-card rounded-[20px] p-5 sm:p-6">
+        <div class="flex items-start gap-3"><span class="grid h-10 w-10 flex-none place-items-center rounded-xl bg-blue-50 text-blue-700"><i data-lucide="clipboard-list" class="h-5 w-5"></i></span><div><h3 class="font-extrabold">Metodologia e limites do diagnóstico</h3><p class="mt-2 text-sm leading-relaxed text-slate-600">O Índice de Maturidade Digital é calculado pela média simples das oito respostas: (pontuação obtida ÷ 24) × 100. Cada pilar corresponde à média de duas perguntas, convertida para uma escala percentual. As faixas são: Iniciante (0–24), Em Transição (25–49), Conectada (50–74) e Líder Digital (75–100). Este instrumento é uma autoavaliação orientativa e não substitui auditoria técnica, análise jurídica, avaliação de riscos ou teste de segurança.</p></div></div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 pt-5 text-xs text-slate-500">
+        <p>dibas. · Diagnóstico 360º de Maturidade Digital</p>
+        <p class="font-semibold">Laudo gerado em <span id="reportDateFooter"></span></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="mt-12 bg-[#0b1220] text-slate-300">
+    <div class="page-shell py-8">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="flex items-center gap-3"><span class="brand-mark"><i data-lucide="workflow" class="w-5 h-5"></i></span><div><p class="font-black text-white">dibas<span class="text-[#43d5ca]">.</span></p><p class="text-xs text-slate-400">Tecnologia com propósito. Gestão com clareza.</p></div></div>
+        <div class="max-w-2xl text-xs leading-relaxed text-slate-400">
+          <p class="font-bold text-[#8df1e6]">Privacy by Design (LGPD)</p>
+          <p class="mt-1">Todos os cálculos são processados localmente no seu navegador. Este arquivo não envia as respostas a um servidor. Bibliotecas de interface são carregadas por CDNs externos.</p>
+        </div>
+      </div>
+      <div class="mt-6 flex flex-col sm:flex-row justify-between gap-2 border-t border-white/10 pt-5 text-[11px] text-slate-500">
+        <p>© <span id="currentYear"></span> Dibas. Todos os direitos reservados.</p>
+        <p>Autores: Especialistas Dibas em Transformação Digital, Cloud, Sistemas Empresariais e Segurança da Informação.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    'use strict';
+
+    const pillars = [
+      {
+        id: 'infra', number: '01', title: 'Infraestrutura Digital e Nuvem', short: 'Infraestrutura e Nuvem', icon: 'cloud', color: 'blue',
+        description: 'Arquitetura tecnológica, adoção de IaaS, PaaS e SaaS, continuidade e proteção dos dados.',
+        questions: [
+          { id: 'q1', title: 'Como a empresa administra sua infraestrutura e utiliza serviços em nuvem?', help: 'Considere servidores, aplicações, armazenamento, escalabilidade e a escolha entre IaaS, PaaS e SaaS.' },
+          { id: 'q2', title: 'Como são realizados backup, recuperação de dados e continuidade operacional?', help: 'Considere a regra 3-2-1, cópias imutáveis ou offline, testes de restauração, RPO e RTO.' }
+        ]
+      },
+      {
+        id: 'systems', number: '02', title: 'Sistemas Empresariais e Fluxo de Dados', short: 'Sistemas e Dados', icon: 'network', color: 'cyan',
+        description: 'Integração entre ERP, CRM e aplicações, consistência dos dados e redução de silos operacionais.',
+        questions: [
+          { id: 'q3', title: 'Em que nível os sistemas ERP, CRM e demais aplicações estão integrados?', help: 'Considere APIs, conectores, sincronização automática, consistência cadastral e retrabalho entre sistemas.' },
+          { id: 'q4', title: 'Como a empresa organiza seus dados e acompanha indicadores de gestão?', help: 'Considere planilhas paralelas, fontes oficiais de informação, dashboards, qualidade e responsáveis pelos dados.' }
+        ]
+      },
+      {
+        id: 'ai', number: '03', title: 'IA Generativa e Automação No-Code', short: 'IA e Automação', icon: 'bot', color: 'violet',
+        description: 'Uso responsável de inteligência artificial, automação de tarefas e produtividade das equipes.',
+        questions: [
+          { id: 'q5', title: 'Como a empresa utiliza inteligência artificial generativa no trabalho?', help: 'Considere casos de uso reais, validação humana, proteção de informações e orientação das equipes.' },
+          { id: 'q6', title: 'Qual é o nível de automação de tarefas e fluxos operacionais?', help: 'Considere ferramentas no-code/low-code, integrações, aprovações, notificações e medição do tempo economizado.' }
+        ]
+      },
+      {
+        id: 'governance', number: '04', title: 'Governança, Ética e Segurança da Informação', short: 'Governança e Segurança', icon: 'shield-check', color: 'emerald',
+        description: 'Privacidade, LGPD, identidade digital, controle de acesso e uso seguro da tecnologia.',
+        questions: [
+          { id: 'q7', title: 'Como a empresa estrutura sua governança de dados e adequação à LGPD?', help: 'Considere inventário de dados pessoais, bases legais, políticas, retenção, atendimento aos titulares e gestão de incidentes.' },
+          { id: 'q8', title: 'Quais controles protegem contas, dispositivos, sistemas e o uso de IA?', help: 'Considere MFA, menor privilégio, revisão de acessos, treinamento, políticas de IA e resposta a incidentes.' }
+        ]
+      }
+    ];
+
+    const answerOptions = [
+      { value: 0, label: 'Inexistente', detail: 'Não existe ou é desconhecido' },
+      { value: 1, label: 'Inicial', detail: 'Informal ou pontual' },
+      { value: 2, label: 'Em evolução', detail: 'Definido, mas parcial' },
+      { value: 3, label: 'Consolidado', detail: 'Integrado, medido e revisado' }
+    ];
+
+    const recommendationLibrary = {
+      q1: [
+        'Mapeie aplicações, servidores, dependências e custos. Classifique os dados e identifique quais cargas podem migrar primeiro. Compare SaaS para processos padronizados, PaaS para desenvolvimento e IaaS quando houver necessidade de controle de infraestrutura.',
+        'Formalize um plano de adoção de nuvem por ondas. Defina critérios de seleção entre IaaS, PaaS e SaaS, responsáveis, orçamento, requisitos de residência dos dados e metas de disponibilidade.',
+        'Padronize contas e ambientes, implemente gestão de identidades, criptografia, monitoramento e alertas de custos. Automatize provisionamento com infraestrutura como código e revise a arquitetura periodicamente.',
+        'Evolua a arquitetura com práticas de FinOps e revisão de confiabilidade. Avalie modernização de aplicações, automação de plataforma, estratégia multirregional quando justificada e métricas de custo por serviço.'
+      ],
+      q2: [
+        'Implemente uma política de backup baseada na regra 3-2-1: três cópias, em dois tipos de mídia, com uma cópia externa. Mantenha ao menos uma cópia offline ou imutável e teste a restauração imediatamente.',
+        'Centralize os agendamentos, criptografe as cópias e documente responsáveis e retenção. Estabeleça objetivos de RPO e RTO por sistema crítico e execute testes de restauração periódicos.',
+        'Automatize verificações de integridade, alertas de falha e replicação dos dados críticos. Formalize um plano de recuperação de desastres e simule cenários de indisponibilidade.',
+        'Valide continuamente os tempos reais de recuperação, proteja os backups contra ransomware e conduza exercícios de continuidade com as áreas de negócio. Ajuste RPO e RTO conforme o impacto operacional.'
+      ],
+      q3: [
+        'Desenhe o fluxo dos processos entre ERP, CRM, financeiro, vendas e estoque. Defina o sistema oficial para cada dado mestre e priorize uma integração-piloto por API ou conector confiável.',
+        'Substitua exportações manuais recorrentes por integrações documentadas. Defina regras de sincronização, tratamento de erros, responsáveis e reconciliação de cadastros entre ERP e CRM.',
+        'Implemente uma camada de integração com APIs, logs, alertas e monitoramento. Padronize identificadores e regras de qualidade para reduzir duplicidade e divergência entre sistemas.',
+        'Monitore a saúde das integrações por indicadores de latência, falhas e qualidade. Revise contratos de API, versionamento, governança de dados mestres e capacidade de expansão do ecossistema.'
+      ],
+      q4: [
+        'Identifique planilhas críticas e atividades que dependem de consolidação manual. Defina uma fonte oficial por indicador e registre proprietário, atualização e regra de cálculo de cada dado.',
+        'Crie um catálogo inicial de dados e padronize cadastros essenciais. Automatize a consolidação dos relatórios prioritários e estabeleça validações para evitar versões conflitantes de planilhas.',
+        'Implante painéis gerenciais conectados às fontes oficiais. Defina métricas de qualidade, periodicidade de atualização, perfis de acesso e responsáveis pela correção dos dados.',
+        'Evolua a governança com catálogo, linhagem, indicadores de qualidade e políticas de ciclo de vida. Use análises preditivas somente sobre bases confiáveis e com finalidade de negócio definida.'
+      ],
+      q5: [
+        'Escolha um caso de uso de baixo risco e alto volume, como rascunhos, sínteses ou classificação de solicitações. Proíba o envio de dados pessoais, sigilosos ou estratégicos a ferramentas não aprovadas.',
+        'Crie diretrizes de uso de IA generativa, capacite as equipes e defina revisão humana obrigatória. Registre os casos de uso, as ferramentas autorizadas e os critérios de qualidade.',
+        'Amplie pilotos que demonstrem resultado. Utilize ambientes empresariais com controles de dados, registre prompts e resultados quando apropriado e meça qualidade, produtividade e riscos.',
+        'Estabeleça ciclo de vida para soluções de IA: avaliação de risco, testes, monitoramento, supervisão humana e revisão periódica. Audite resultados e previna vieses, exposição de dados e dependência excessiva.'
+      ],
+      q6: [
+        'Selecione um processo repetitivo e de baixo risco para automatizar. Documente etapas, exceções e responsáveis antes de escolher uma ferramenta no-code/low-code.',
+        'Implemente automações simples para notificações, formulários, aprovações e transferência de dados. Inclua logs, tratamento de falhas e um responsável pelo fluxo.',
+        'Conecte ferramentas e sistemas por APIs ou plataformas de automação. Estabeleça padrões de documentação, controle de versões, permissões e indicadores de tempo economizado.',
+        'Crie um catálogo de automações, monitore falhas e retorno operacional e aplique governança de desenvolvimento cidadão. Revise riscos, custos e dependências de fornecedores.'
+      ],
+      q7: [
+        'Inicie um inventário de dados pessoais e dos processos que os utilizam. Identifique finalidades, categorias de titulares, sistemas envolvidos e responsáveis; busque orientação especializada para definir bases legais.',
+        'Formalize avisos de privacidade, regras de retenção e descarte, canal para titulares e procedimento de incidentes. Avalie contratos com operadores e registre as operações de tratamento.',
+        'Implemente rotina de avaliação de riscos, revisão de contratos e treinamento. Mantenha evidências de decisões, controles técnicos e atendimento às solicitações dos titulares.',
+        'Realize avaliações periódicas de impacto quando aplicáveis, teste a efetividade dos controles e integre privacidade desde a concepção de novos produtos, dados e automações.'
+      ],
+      q8: [
+        'Ative MFA nas contas críticas, elimine contas compartilhadas e revise acessos administrativos. Defina um canal para reporte de incidentes e regras claras sobre ferramentas de IA permitidas.',
+        'Adote menor privilégio, processo de entrada e desligamento de usuários, atualizações regulares e treinamento contra phishing. Exija MFA para e-mail, VPN e sistemas críticos.',
+        'Centralize identidades quando possível, automatize revisões de acesso e mantenha inventário de ativos. Documente resposta a incidentes e aplique controles de prevenção de perda de dados conforme o risco.',
+        'Adote monitoramento contínuo, testes de resposta a incidentes e revisão baseada em risco. Inclua avaliação de fornecedores, segurança de aplicações e controles específicos para IA e dados sensíveis.'
+      ]
+    };
+
+    const pillarAccents = {
+      blue: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-100' },
+      cyan: { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-100' },
+      violet: { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-100' },
+      emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100' }
+    };
+
+    const form = document.getElementById('assessmentForm');
+    const questionGroups = document.getElementById('questionGroups');
+    const resultsSection = document.getElementById('results');
+    let currentChart = null;
+    let latestDiagnosis = null;
+
+    function renderQuestions() {
+      questionGroups.innerHTML = pillars.map((pillar) => {
+        const accent = pillarAccents[pillar.color];
+        const questionMarkup = pillar.questions.map((question, questionIndex) => `
+          <fieldset class="question-card mt-4">
+            <legend class="w-full">
+              <span class="flex items-start gap-3">
+                <span class="mt-0.5 grid h-7 w-7 flex-none place-items-center rounded-lg bg-slate-100 text-xs font-black text-slate-600">${questionIndex + 1}</span>
+                <span><span class="block text-sm font-extrabold leading-relaxed text-slate-800">${question.title}</span><span class="mt-1 block text-xs leading-relaxed text-slate-500">${question.help}</span></span>
+              </span>
+            </legend>
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2" role="radiogroup" aria-label="${question.title}">
+              ${answerOptions.map((option) => `
+                <label class="option-label">
+                  <input type="radio" name="${question.id}" value="${option.value}" required />
+                  <span><strong class="block text-xs">${option.value} · ${option.label}</strong><span class="mt-1 block text-[10px] text-slate-500">${option.detail}</span></span>
+                </label>
+              `).join('')}
+            </div>
+          </fieldset>
+        `).join('');
+        return `
+          <section class="rounded-[19px] border border-slate-200 p-4 sm:p-5" aria-labelledby="heading-${pillar.id}">
+            <div class="flex items-center gap-3">
+              <span class="pillar-icon ${accent.bg} ${accent.text}"><i data-lucide="${pillar.icon}" class="h-5 w-5"></i></span>
+              <div class="min-w-0"><p class="eyebrow text-slate-400">Pilar ${pillar.number}</p><h4 id="heading-${pillar.id}" class="text-base font-black">${pillar.title}</h4><p class="mt-0.5 text-xs text-slate-500">${pillar.description}</p></div>
+            </div>
+            ${questionMarkup}
+          </section>
+        `;
+      }).join('');
+      refreshIcons();
+    }
+
+    function refreshIcons() {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+    }
+
+    function updateCompletion() {
+      const answered = pillars.flatMap(p => p.questions).filter(q => form.querySelector(`input[name="${q.id}"]:checked`)).length;
+      document.getElementById('completionCount').textContent = `${answered} de 8 respondidas`;
+    }
+
+    function getClassification(score) {
+      if (score < 25) return { stage: 'Iniciante', label: 'Iniciante · Crítico', title: 'Construir a base digital', description: 'A empresa apresenta práticas digitais pouco estruturadas. O foco inicial deve ser reduzir riscos, organizar processos essenciais e criar uma base confiável para evoluir.', badge: 'status-critical', priority: 'Prioridade: controles essenciais e continuidade.' };
+      if (score < 50) return { stage: 'Em Transição', label: 'Em Transição', title: 'Organizar e conectar iniciativas', description: 'Há iniciativas digitais em andamento, mas ainda existem lacunas de integração, padronização ou governança. O próximo passo é transformar ações pontuais em processos repetíveis.', badge: 'status-transition', priority: 'Prioridade: padronização e integração.' };
+      if (score < 75) return { stage: 'Conectada', label: 'Conectada · Estruturado', title: 'Ampliar integração e eficiência', description: 'A empresa demonstra uma estrutura digital relevante. O ganho agora está em ampliar a integração entre áreas, medir resultados e fortalecer a governança de ponta a ponta.', badge: 'status-structured', priority: 'Prioridade: otimização e gestão por indicadores.' };
+      return { stage: 'Líder Digital', label: 'Líder Digital', title: 'Inovar com escala e confiança', description: 'As práticas avaliadas indicam maturidade elevada. O desafio é manter a resiliência, evoluir continuamente e escalar inovação com segurança, ética e retorno mensurável.', badge: 'status-leader', priority: 'Prioridade: inovação contínua e excelência operacional.' };
+    }
+
+    function pillarLevel(score) {
+      if (score < 40) return 'Fundação prioritária';
+      if (score < 70) return 'Em desenvolvimento';
+      return 'Prática avançada';
+    }
+
+    function calculateDiagnosis() {
+      const companyName = document.getElementById('companyName').value.trim();
+      const companySector = document.getElementById('companySector').value;
+      const companySize = document.getElementById('companySize').value;
+      const answers = {};
+      pillars.flatMap(p => p.questions).forEach((question) => {
+        const selected = form.querySelector(`input[name="${question.id}"]:checked`);
+        if (selected) answers[question.id] = Number(selected.value);
+      });
+
+      const pillarResults = pillars.map((pillar) => {
+        const questionValues = pillar.questions.map(q => answers[q.id]);
+        const score = Math.round((questionValues.reduce((sum, value) => sum + value, 0) / 6) * 100);
+        return { ...pillar, score, questionValues };
+      });
+      const rawTotal = Object.values(answers).reduce((sum, value) => sum + value, 0);
+      const overall = Math.round((rawTotal / 24) * 100);
+      return { companyName, companySector, companySize, answers, pillarResults, overall, classification: getClassification(overall), generatedAt: new Date() };
+    }
+
+    function drawChart(pillarResults) {
+      const canvas = document.getElementById('pillarChart');
+      const fallback = document.getElementById('chartFallback');
+      if (currentChart) { currentChart.destroy(); currentChart = null; }
+      if (typeof window.Chart === 'undefined') {
+        canvas.classList.add('hidden');
+        fallback.classList.remove('hidden');
+        fallback.innerHTML = pillarResults.map(p => `
+          <div class="fallback-bar"><span class="font-semibold text-slate-600">${p.short}</span><div class="fallback-track"><div class="fallback-fill" style="width:${p.score}%"></div></div><strong class="text-right text-slate-700">${p.score}%</strong></div>
+        `).join('');
+        return;
+      }
+      canvas.classList.remove('hidden');
+      fallback.classList.add('hidden');
+      currentChart = new Chart(canvas, {
+        type: 'radar',
+        data: {
+          labels: pillarResults.map(p => p.short),
+          datasets: [{
+            label: 'Maturidade por pilar',
+            data: pillarResults.map(p => p.score),
+            fill: true,
+            backgroundColor: 'rgba(57, 120, 246, 0.16)',
+            borderColor: '#3978f6',
+            pointBackgroundColor: '#43d5ca',
+            pointBorderColor: '#ffffff',
+            pointHoverBackgroundColor: '#ffffff',
+            pointHoverBorderColor: '#3978f6',
+            borderWidth: 2,
+            pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              min: 0, max: 100,
+              ticks: { stepSize: 20, backdropColor: 'transparent', color: '#94a3b8', font: { size: 9 } },
+              grid: { color: 'rgba(148, 163, 184, .22)' },
+              angleLines: { color: 'rgba(148, 163, 184, .22)' },
+              pointLabels: { color: '#475569', font: { size: 11, weight: '600' } }
+            }
+          },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => ` ${context.formattedValue}%` } } }
+        }
+      });
+    }
+
+    function renderPillarCards(pillarResults) {
+      const target = document.getElementById('pillarCards');
+      target.innerHTML = pillarResults.map((pillar) => {
+        const accent = pillarAccents[pillar.color];
+        return `
+          <article class="score-card">
+            <div class="flex items-start justify-between gap-2"><span class="pillar-icon ${accent.bg} ${accent.text} !h-9 !w-9 !rounded-xl"><i data-lucide="${pillar.icon}" class="h-4 w-4"></i></span><span class="text-[10px] font-bold text-slate-400">PILAR ${pillar.number}</span></div>
+            <p class="mt-4 text-xs font-bold text-slate-500">${pillar.short}</p>
+            <div class="mt-1 flex items-end justify-between"><strong class="text-3xl font-black tracking-tight text-slate-900">${pillar.score}<span class="text-lg">%</span></strong><span class="mb-1 text-[10px] font-bold text-slate-500">${pillarLevel(pillar.score)}</span></div>
+            <div class="progress-track mt-3"><div class="progress-fill" style="width:${pillar.score}%"></div></div>
+          </article>
+        `;
+      }).join('');
+      refreshIcons();
+    }
+
+    function renderRecommendations(diagnosis) {
+      const container = document.getElementById('recommendations');
+      container.innerHTML = diagnosis.pillarResults.map((pillar) => {
+        const accent = pillarAccents[pillar.color];
+        const actionItems = pillar.questions.map((question, index) => {
+          const answerValue = diagnosis.answers[question.id];
+          const recommendation = recommendationLibrary[question.id][answerValue];
+          const priorityLabel = answerValue <= 1 ? 'Prioridade alta' : answerValue === 2 ? 'Evolução recomendada' : 'Otimização contínua';
+          const priorityClass = answerValue <= 1 ? 'text-rose-600 bg-rose-50' : answerValue === 2 ? 'text-amber-700 bg-amber-50' : 'text-emerald-700 bg-emerald-50';
+          return `
+            <div class="recommendation">
+              <div class="flex items-start gap-3"><span class="recommendation-number">${index + 1}</span><div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><p class="text-xs font-extrabold text-slate-700">${question.title}</p><span class="rounded-full px-2 py-1 text-[9px] font-extrabold ${priorityClass}">${priorityLabel}</span></div><p class="mt-2 text-xs leading-relaxed text-slate-600">${recommendation}</p></div></div>
+            </div>
+          `;
+        }).join('');
+        let synthesis = pillar.score < 40
+          ? 'Este pilar demanda atenção imediata. Comece pelas ações fundamentais e atribua responsáveis e prazos antes de ampliar ferramentas.'
+          : pillar.score < 70
+            ? 'Existem práticas estabelecidas, mas ainda há espaço para padronizar e conectar atividades. Priorize as recomendações com maior impacto operacional.'
+            : 'O nível observado é positivo. Preserve os controles existentes e concentre a evolução em métricas, automação, resiliência e melhoria contínua.';
+        return `
+          <section class="pillar-report rounded-2xl border border-slate-200 p-4 sm:p-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div class="flex items-center gap-3"><span class="pillar-icon ${accent.bg} ${accent.text}"><i data-lucide="${pillar.icon}" class="h-5 w-5"></i></span><div><p class="eyebrow text-slate-400">Pilar ${pillar.number}</p><h4 class="font-black">${pillar.title}</h4></div></div>
+              <div class="flex items-center gap-3"><span class="text-xs text-slate-500">Nota do pilar</span><strong class="text-2xl font-black">${pillar.score}%</strong></div>
+            </div>
+            <p class="mb-4 rounded-xl ${accent.bg} px-3 py-2.5 text-xs leading-relaxed ${accent.text}">${synthesis}</p>
+            <div class="grid md:grid-cols-2 gap-3">${actionItems}</div>
+          </section>
+        `;
+      }).join('');
+      refreshIcons();
+    }
+
+    function renderDiagnosis(diagnosis) {
+      latestDiagnosis = diagnosis;
+      const classification = diagnosis.classification;
+      document.getElementById('reportMeta').textContent = `${diagnosis.companyName} · ${diagnosis.companySector} · ${diagnosis.companySize} · Gerado em ${diagnosis.generatedAt.toLocaleString('pt-BR')}`;
+      document.getElementById('printCompany').textContent = `${diagnosis.companyName} | ${diagnosis.companySector} | ${diagnosis.companySize}`;
+      document.getElementById('overallScore').textContent = `${diagnosis.overall}%`;
+      const scoreRing = document.getElementById('scoreRing');
+      scoreRing.style.setProperty('--score', diagnosis.overall);
+      scoreRing.setAttribute('aria-valuenow', String(diagnosis.overall));
+      const badge = document.getElementById('classificationBadge');
+      badge.className = `status-pill ${classification.badge}`;
+      badge.textContent = classification.label;
+      document.getElementById('classificationTitle').textContent = classification.title;
+      document.getElementById('classificationDescription').textContent = classification.description;
+      document.getElementById('priorityText').textContent = classification.priority;
+      document.getElementById('reportDateFooter').textContent = diagnosis.generatedAt.toLocaleString('pt-BR');
+      drawChart(diagnosis.pillarResults);
+      renderPillarCards(diagnosis.pillarResults);
+      renderRecommendations(diagnosis);
+      resultsSection.classList.remove('hidden');
+      refreshIcons();
+    }
+
+    function runDiagnosis({ scroll = true } = {}) {
+      const companyName = document.getElementById('companyName');
+      const sector = document.getElementById('companySector');
+      const size = document.getElementById('companySize');
+      const missing = pillars.flatMap(p => p.questions).filter(q => !form.querySelector(`input[name="${q.id}"]:checked`));
+      const error = document.getElementById('formError');
+      if (!companyName.value.trim() || !sector.value || !size.value || missing.length) {
+        error.textContent = `Complete os dados da empresa e responda às ${missing.length} pergunta(s) pendente(s) para gerar o diagnóstico.`;
+        error.classList.remove('hidden');
+        if (!companyName.value.trim()) companyName.focus();
+        else if (!sector.value) sector.focus();
+        else if (!size.value) size.focus();
+        else form.querySelector(`input[name="${missing[0].id}"]`)?.focus();
+        return false;
+      }
+      error.classList.add('hidden');
+      renderDiagnosis(calculateDiagnosis());
+      if (scroll) resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return true;
+    }
+
+    function loadDemo() {
+      document.getElementById('companyName').value = 'Aurora Alimentos Ltda.';
+      document.getElementById('companySector').value = 'Alimentos e Bebidas';
+      document.getElementById('companySize').value = 'Média empresa (50 a 249 pessoas)';
+      const demoAnswers = { q1: 2, q2: 2, q3: 1, q4: 2, q5: 1, q6: 0, q7: 1, q8: 2 };
+      Object.entries(demoAnswers).forEach(([questionId, value]) => {
+        const input = form.querySelector(`input[name="${questionId}"][value="${value}"]`);
+        if (input) input.checked = true;
+      });
+      updateCompletion();
+      runDiagnosis();
+    }
+
+    form.addEventListener('change', updateCompletion);
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      runDiagnosis();
+    });
+    document.getElementById('demoButtonTop').addEventListener('click', loadDemo);
+    document.getElementById('demoButtonHero').addEventListener('click', loadDemo);
+    document.getElementById('demoButtonForm').addEventListener('click', loadDemo);
+    document.getElementById('printButton').addEventListener('click', () => window.print());
+    document.getElementById('editButton').addEventListener('click', () => document.getElementById('assessment').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+
+    document.getElementById('currentYear').textContent = String(new Date().getFullYear());
+    renderQuestions();
+    updateCompletion();
+    refreshIcons();
+  </script>
+</body>
+</html>
